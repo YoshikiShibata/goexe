@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/YoshikiShibata/tools/util/files"
 )
@@ -32,6 +33,7 @@ type command struct {
 }
 
 func main() {
+	startTime := time.Now()
 	flag.Parse()
 
 	args := flag.Args()
@@ -70,16 +72,18 @@ func main() {
 	}
 	wg.Wait()
 
-	/*
-		for _, cmd := range commands {
-			if cmd.err == nil {
-				fmt.Printf("PASS: %s %s\n", cmd.name, cmd.args)
-				continue
-			}
-			fmt.Printf("FAIL: %s %s\n", cmd.name, cmd.args)
-			fmt.Printf("%s\n\n", cmd.output.String())
+	passCount := 0
+	failCount := 0
+	for _, cmd := range commands {
+		if cmd.err == nil {
+			passCount++
+			continue
 		}
-	*/
+		failCount++
+	}
+	fmt.Printf("Result: %d passed, %d failed, %d total\n",
+		passCount, failCount, passCount+failCount)
+	fmt.Printf("Elapsed time: %v\n", time.Since(startTime))
 }
 
 func parseCommandLine(line string) (name string, args []string, err error) {
