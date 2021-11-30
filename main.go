@@ -60,9 +60,9 @@ func main() {
 	var wg sync.WaitGroup
 
 	for _, cmd := range commands {
+		sem <- struct{}{}
 		wg.Add(1)
 		go func(cmd *command) {
-			sem <- struct{}{}
 			execCommand(cmd)
 			<-sem
 			wg.Done()
@@ -70,14 +70,16 @@ func main() {
 	}
 	wg.Wait()
 
-	for _, cmd := range commands {
-		if cmd.err == nil {
-			fmt.Printf("PASS: %s %s\n", cmd.name, cmd.args)
-			continue
+	/*
+		for _, cmd := range commands {
+			if cmd.err == nil {
+				fmt.Printf("PASS: %s %s\n", cmd.name, cmd.args)
+				continue
+			}
+			fmt.Printf("FAIL: %s %s\n", cmd.name, cmd.args)
+			fmt.Printf("%s\n\n", cmd.output.String())
 		}
-		fmt.Printf("FAIL: %s %s\n", cmd.name, cmd.args)
-		fmt.Printf("%s\n\n", cmd.output.String())
-	}
+	*/
 }
 
 func parseCommandLine(line string) (name string, args []string, err error) {
@@ -98,4 +100,10 @@ func execCommand(cmd *command) {
 	}
 
 	cmd.err = execCmd.Wait()
+	if cmd.err != nil {
+		fmt.Printf("PASS : %s %s\n", cmd.name, cmd.args)
+		return
+	}
+	fmt.Printf("FAIL : %s %s\n", cmd.name, cmd.args)
+	fmt.Printf("%s\n\n", cmd.output.String())
 }
