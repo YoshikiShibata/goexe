@@ -105,7 +105,7 @@ func execCommand(cmd *command) {
 	}
 
 	cmd.err = execCmd.Wait()
-	if cmd.err != nil {
+	if cmd.err == nil {
 		fmt.Printf("PASS : %s %s\n", cmd.name, cmd.args)
 		if *vFlag {
 			fmt.Printf("%s\n\n", cmd.output.String())
