@@ -17,6 +17,7 @@ import (
 
 var (
 	pFlag = flag.Int("cl", 20, "concurrency level")
+	vFlag = flag.Bool("v", false, "verbose")
 )
 
 func showUsageAndExit() {
@@ -106,6 +107,9 @@ func execCommand(cmd *command) {
 	cmd.err = execCmd.Wait()
 	if cmd.err != nil {
 		fmt.Printf("PASS : %s %s\n", cmd.name, cmd.args)
+		if *vFlag {
+			fmt.Printf("%s\n\n", cmd.output.String())
+		}
 		return
 	}
 	fmt.Printf("FAIL : %s %s\n", cmd.name, cmd.args)
