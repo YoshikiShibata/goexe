@@ -51,6 +51,10 @@ func main() {
 	var commands []*command
 
 	for _, line := range lines {
+		if len(line) == 0 || line[0] == '#' {
+			continue
+		}
+
 		name, args, err := parseCommandLine(line)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%q: %v\n", err)
