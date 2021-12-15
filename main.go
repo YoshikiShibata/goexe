@@ -116,6 +116,8 @@ func execCommand(cmd *command) {
 		}
 		return
 	}
+
 	fmt.Printf("FAIL : %s %s\n", cmd.name, cmd.args)
-	fmt.Printf("%s\n\n", cmd.output.String())
+	fmt.Printf("%s\n", cmd.output.String())
+	fmt.Printf("=====: %s %s\n\n", cmd.name, cmd.args)
 }
