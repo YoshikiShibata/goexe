@@ -33,6 +33,12 @@ type command struct {
 	output bytes.Buffer
 }
 
+var statics struct {
+	sync.Mutex
+	pass int
+	fail int
+}
+
 func main() {
 	startTime := time.Now()
 	flag.Parse()
@@ -89,6 +95,10 @@ func main() {
 	fmt.Printf("Result: %d passed, %d failed, %d total\n",
 		passCount, failCount, passCount+failCount)
 	fmt.Printf("Elapsed time: %v\n", time.Since(startTime))
+	statics.Lock()
+	if statics.fail != 0 {
+		os.Exit(1)
+	}
 }
 
 func parseCommandLine(line string) (name string, args []string, err error) {
@@ -105,6 +115,9 @@ func execCommand(cmd *command) {
 
 	if err := execCmd.Start(); err != nil {
 		cmd.err = err
+		statics.Lock()
+		statics.fail++
+		statics.Unlock()
 		return
 	}
 
@@ -114,10 +127,16 @@ func execCommand(cmd *command) {
 		if *vFlag {
 			fmt.Printf("%s\n\n", cmd.output.String())
 		}
+		statics.Lock()
+		statics.pass++
+		statics.Unlock()
 		return
 	}
 
 	fmt.Printf("FAIL : %s %s\n", cmd.name, cmd.args)
 	fmt.Printf("%s\n", cmd.output.String())
 	fmt.Printf("=====: %s %s\n\n", cmd.name, cmd.args)
+	statics.Lock()
+	statics.fail++
+	statics.Unlock()
 }
