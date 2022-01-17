@@ -100,7 +100,8 @@ func parseCommandLine(line string) (name string, args []string, err error) {
 }
 
 func execCommand(cmd *command) {
-	fmt.Printf("START: %s %s\n", cmd.name, cmd.args)
+	fmt.Printf("START: %s %s\n", cmd.name, flatenStrings(cmd.args))
+	start := time.Now()
 
 	execCmd := exec.Command(cmd.name, cmd.args...)
 	execCmd.Stdout = &cmd.output
@@ -113,14 +114,24 @@ func execCommand(cmd *command) {
 
 	cmd.err = execCmd.Wait()
 	if cmd.err == nil {
-		fmt.Printf("PASS : %s %s\n", cmd.name, cmd.args)
+		fmt.Printf("PASS : %s %s (%v)\n",
+			cmd.name, flatenStrings(cmd.args), time.Since(start))
 		if *vFlag {
 			fmt.Printf("%s\n\n", cmd.output.String())
 		}
 		return
 	}
 
-	fmt.Printf("FAIL : %s %s\n", cmd.name, cmd.args)
+	fmt.Printf("FAIL : %s %s\n", cmd.name, flatenStrings(cmd.args))
 	fmt.Printf("%s\n", cmd.output.String())
-	fmt.Printf("=====: %s %s\n\n", cmd.name, cmd.args)
+	fmt.Printf("=====: %s %s (%v)\n",
+		cmd.name, flatenStrings(cmd.args), time.Since(start))
+}
+
+func flatenStrings(strings []string) string {
+	result := strings[0]
+	for _, str := range strings[1:] {
+		result += " " + str
+	}
+	return result
 }
