@@ -16,7 +16,7 @@ import (
 	"github.com/YoshikiShibata/tools/util/files"
 )
 
-const version = "1.0"
+const version = "1.0.1"
 
 var (
 	pFlag = flag.Int("cl", 20, "concurrency level")
@@ -96,12 +96,13 @@ func main() {
 	fmt.Printf("Result: %d passed, %d failed, %d total\n",
 		passCount, failCount, passCount+failCount)
 	fmt.Printf("Elapsed time: %v\n", time.Since(startTime))
-	if failCount > 0 {
-		os.Exit(1)
-	}
 
 	if *wFlag {
 		saveByElapsedTime(args[0], commands)
+	}
+
+	if failCount > 0 {
+		os.Exit(1)
 	}
 }
 
@@ -153,6 +154,8 @@ func saveByElapsedTime(filename string, cmds []*command) {
 	sort.Slice(cmds, func(i, j int) bool {
 		return cmds[j].elapsedTime < cmds[i].elapsedTime
 	})
+
+	_ = os.Remove(filename + ".old") // ignore error
 
 	if err := os.Rename(filename, filename+".old"); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to rename %s\n", filename)
