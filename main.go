@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -15,25 +16,31 @@ import (
 	"github.com/YoshikiShibata/tools/util/files"
 )
 
+const version = "1.0"
+
 var (
 	pFlag = flag.Int("cl", 20, "concurrency level")
 	vFlag = flag.Bool("v", false, "verbose")
+	wFlag = flag.Bool("w", false, "overwrite file by elapsed time")
 )
 
 func showUsageAndExit() {
-	fmt.Fprintf(os.Stderr, "usage: goexec [-p courrency_level] exec_file\n")
+	fmt.Fprintf(os.Stderr, "usage: goexe [-p courrency_level] exec_file\n")
 	os.Exit(1)
 }
 
 type command struct {
-	no     int
-	name   string
-	args   []string
-	err    error
-	output bytes.Buffer
+	no          int
+	name        string
+	args        []string
+	err         error
+	output      bytes.Buffer
+	elapsedTime time.Duration
 }
 
 func main() {
+	fmt.Printf("goexe version: %s\n", version)
+
 	startTime := time.Now()
 	flag.Parse()
 
@@ -92,6 +99,10 @@ func main() {
 	if failCount > 0 {
 		os.Exit(1)
 	}
+
+	if *wFlag {
+		saveByElapsedTime(args[0], commands)
+	}
 }
 
 func parseCommandLine(line string) (name string, args []string, err error) {
@@ -113,9 +124,11 @@ func execCommand(cmd *command) {
 	}
 
 	cmd.err = execCmd.Wait()
+	cmd.elapsedTime = time.Since(start)
+
 	if cmd.err == nil {
 		fmt.Printf("PASS : %s %s (%v)\n",
-			cmd.name, flatenStrings(cmd.args), time.Since(start))
+			cmd.name, flatenStrings(cmd.args), cmd.elapsedTime)
 		if *vFlag {
 			fmt.Printf("%s\n\n", cmd.output.String())
 		}
@@ -125,7 +138,7 @@ func execCommand(cmd *command) {
 	fmt.Printf("FAIL : %s %s\n", cmd.name, flatenStrings(cmd.args))
 	fmt.Printf("%s\n", cmd.output.String())
 	fmt.Printf("=====: %s %s (%v)\n",
-		cmd.name, flatenStrings(cmd.args), time.Since(start))
+		cmd.name, flatenStrings(cmd.args), cmd.elapsedTime)
 }
 
 func flatenStrings(strings []string) string {
@@ -134,4 +147,27 @@ func flatenStrings(strings []string) string {
 		result += " " + str
 	}
 	return result
+}
+
+func saveByElapsedTime(filename string, cmds []*command) {
+	sort.Slice(cmds, func(i, j int) bool {
+		return cmds[j].elapsedTime < cmds[i].elapsedTime
+	})
+
+	if err := os.Rename(filename, filename+".old"); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to rename %s\n", filename)
+		return
+	}
+
+	file, err := os.Create(filename)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create %s\n", err)
+		return
+	}
+	defer file.Close()
+
+	for _, cmd := range cmds {
+		fmt.Fprintln(file,
+			fmt.Sprintf("%s %s", cmd.name, flatenStrings(cmd.args)))
+	}
 }
