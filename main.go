@@ -16,7 +16,7 @@ import (
 	"github.com/YoshikiShibata/tools/util/files"
 )
 
-const version = "1.0.1"
+const version = "1.0.2"
 
 var (
 	pFlag = flag.Int("cl", 20, "concurrency level")
@@ -73,11 +73,13 @@ func main() {
 	sem := make(chan struct{}, *pFlag)
 	var wg sync.WaitGroup
 
-	for _, cmd := range commands {
+	noOfCommands := len(commands)
+	for i, cmd := range commands {
+		i := i
 		sem <- struct{}{}
 		wg.Add(1)
 		go func(cmd *command) {
-			execCommand(cmd)
+			execCommand(cmd, i+1, noOfCommands)
 			<-sem
 			wg.Done()
 		}(cmd)
@@ -111,8 +113,12 @@ func parseCommandLine(line string) (name string, args []string, err error) {
 	return tokens[0], tokens[1:], nil
 }
 
-func execCommand(cmd *command) {
-	fmt.Printf("START: %s %s\n", cmd.name, flatenStrings(cmd.args))
+func execCommand(cmd *command, index, noOfCommands int) {
+	fmt.Printf("START: %s %s (%d/%d)\n",
+		cmd.name,
+		flatenStrings(cmd.args),
+		index,
+		noOfCommands)
 	start := time.Now()
 
 	execCmd := exec.Command(cmd.name, cmd.args...)
