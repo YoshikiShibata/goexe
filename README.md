@@ -4,4 +4,4 @@
 
 - As a default, goexe doesn't show any output produced by each `PASS`ed command: only `FAIL`ed command's output will be shown. If you want to see the output of `PASS`ed commands, then specify `-v` option.
 
-- If `-w` option is specified, the command-list file will be overwritten by a list of commands which is sorted by elapsed time.
+- If `-w` option is specified, the command-list file will be overwritten by a list of commands which is sorted in descending order by elapsed time.
